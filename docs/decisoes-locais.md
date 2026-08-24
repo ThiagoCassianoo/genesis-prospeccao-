@@ -19,6 +19,17 @@ automatizado. Alternativa recomendada (API oficial Meta Cloud) foi
 apresentada e recusada — não é decisão do agente, é decisão do diretor
 registrada aqui pra não ser re-litigada a cada sessão.
 
+## 2026-08-24 — Telefone do CNPJ não é confiável pra campanha
+Pesquisa real (thread de programador brasileiro, não suposição): o
+telefone cadastrado no CNPJ costuma ser do escritório de contabilidade
+que abriu a empresa, não da empresa em si. `coleta/src/cnpj.js` mantém
+esse campo só como `telefone_cnpj_nao_confiavel` — nunca usado como
+contato de campanha. Contato real vem de `coleta/src/maps.js` (telefone
+que o dono cadastrou no Google/Maps). Também explica o modelo de
+Capturama/Datagma: dado de CNPJ é grátis (mesma base pública que já uso);
+contato confiável é sempre produto pago de base proprietária — não existe
+atalho gratuito pra isso além do que o Maps já entrega.
+
 ## 2026-08-24 — Fonte de dado: MCPs já conectados primeiro
 Vibe Prospecting (Explorium) e Firecrawl já autorizados na conta — usar
 como fonte primária, zero setup. TomTom Maps foi adicionado à conta mas
