@@ -23,6 +23,18 @@
     </section>
 
     <section class="painel">
+      <h2>1b. Importar planilha manual</h2>
+      <p class="aviso">Reconhece coluna sozinho (nome/empresa, telefone/celular/whatsapp,
+      categoria/segmento, cidade, site, cnpj) — qualquer cabeçalho razoável. Roda o mesmo
+      pipeline de validação + prioridade, e sincroniza com o CRM se configurado.</p>
+      <form id="form-importar">
+        <input type="file" name="planilha" accept=".xlsx,.csv" required>
+        <button type="submit">Importar e processar</button>
+      </form>
+      <pre id="resultado-importar" class="resultado"></pre>
+    </section>
+
+    <section class="painel">
       <h2>2. Leads</h2>
       <button id="btn-atualizar-leads">Atualizar</button>
       <a href="/api/exportar"><button type="button">Exportar planilha (.xlsx)</button></a>

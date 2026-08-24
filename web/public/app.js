@@ -19,6 +19,21 @@ document.getElementById('form-varredura').addEventListener('submit', async (ev) 
   carregarLeads();
 });
 
+document.getElementById('form-importar').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const saida = document.getElementById('resultado-importar');
+  saida.textContent = 'Lendo e reconhecendo colunas...';
+  const resposta = await fetch('/api/importar', { method: 'POST', body: new FormData(ev.target) });
+  const r = await resposta.json();
+  saida.textContent = r.erro
+    ? `Erro: ${r.erro}`
+    : `Coluna reconhecida: ${JSON.stringify(r.mapeamento)}\n` +
+      (r.naoMapeados.length ? `Não reconhecida (ignorada): ${r.naoMapeados.join(', ')}\n` : '') +
+      `${r.linhasLidas} linhas lidas — ${r.validacao.pendente} válidas, ${r.validacao.invalido} inválidas, ${r.validacao.duplicado} duplicadas.` +
+      (r.crm ? `\nCRM: ${r.crm.criadas} nova(s) sincronizada(s).` : '\nCRM não configurado — só validou.');
+  carregarLeads();
+});
+
 async function carregarLeads() {
   const leads = await chamarAPI('/api/leads');
   const corpo = document.querySelector('#tabela-leads tbody');

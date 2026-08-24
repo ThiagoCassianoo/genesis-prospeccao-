@@ -35,16 +35,33 @@ node crm/src/sync-twenty.js
 Cria uma "company" no Twenty pra cada lead com status `pendente` ou
 `enviado` em `coleta/leads.csv`.
 
+## Kanban automático (o que já anda sozinho)
+`crm/src/sync-twenty.js` cria company + opportunity em estágio `NOVO`
+na 1ª sincronização, e `atualizarEstagio()` move o card sozinho quando o
+funil avança de verdade — chamado automaticamente por
+`whatsapp-bot/src/index.js`:
+- Mensagem enviada → estágio `CONTATADO`.
+- Lead responde (qualquer coisa que não seja opt-out) → estágio `RESPONDEU`.
+
+Estado local (`crm/state/twenty-ids.json`, gitignored) guarda o par
+telefone → {companyId, opportunityId} pra saber o que já existe e não
+duplicar.
+
+## Nomes de estágio são configuráveis (flexível de propósito)
+Cada workspace do Twenty nomeia o pipeline diferente. Ajuste no `.env`
+antes de rodar, conferindo os nomes reais em
+**Oportunidades → configurar pipeline** na sua instância:
+```bash
+TWENTY_STAGE_FIELD=stage        # nome do campo de estágio na sua instância
+TWENTY_STAGE_NOVO=NEW
+TWENTY_STAGE_CONTATADO=CONTACTED
+TWENTY_STAGE_RESPONDEU=MEETING
+```
+
 ## O que ainda não está automático (de propósito, não por preguiça)
-- **Pipeline/estágio da oportunidade**: cada workspace do Twenty pode
-  ter nomes de estágio diferentes (Novo/Contatado/Reunião/Cliente, ou o
-  que você configurar). Não travei um nome de estágio no código porque
-  eu inventaria valor que pode não bater com sua instância — confirme
-  os nomes reais em **Oportunidades → configurar pipeline** e adicione
-  a chamada de criação de oportunidade em `sync-twenty.js` depois.
-- **Sincronização de resposta do WhatsApp → CRM**: hoje o bot só
-  detecta opt-out. Fechar esse elo (resposta recebida → atualiza card no
-  Twenty) é o próximo passo natural, não construído ainda.
+- **Reunião → Cliente**: esses dois estágios continuam manuais — não
+  existe evento automático confiável pra "marcou reunião" ou "fechou
+  contrato", isso é julgamento humano, não dado de sistema.
 - **Não testado ao vivo**: a chamada de API é baseada na documentação
   pública do Twenty — a rede deste ambiente de desenvolvimento bloqueia
   `docs.twenty.com`, então não rodei contra uma instância real. Rode

@@ -117,7 +117,9 @@ coleta/src/cnpj.js               validação via minhareceita.org/BrasilAPI/CNPJ
 coleta/src/validar.js            normalização + resgate wa.me + dedupe + prioridade → leads.csv
 coleta/src/exportar-planilha.js  consolida leads.csv em .xlsx, cruza com CNPJ quando conhecido
 lib/limitador-diario.js          núcleo do rate-limit, reusado por WhatsApp e navegador
-crm/src/sync-twenty.js           módulo 2: sincroniza leads.csv → Twenty CRM (companies)
+crm/src/sync-twenty.js           módulo 2: cria company+opportunity, kanban anda sozinho (enviado→respondeu)
+coleta/src/mapeamento-colunas.js reconhece coluna de planilha manual (sinônimo + fallback por linha)
+coleta/src/importar-planilha.js  upload de planilha manual → mesmo pipeline (validar + CRM)
 coleta/schema.md         schema do CSV de entrada/saída
 whatsapp-bot/src/warmup.js    gate de aquecimento (5-7 dias)
 whatsapp-bot/src/limiter.js   rate-limit 5-10/dia, horário comercial, jitter

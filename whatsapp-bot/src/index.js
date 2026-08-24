@@ -6,6 +6,7 @@ import { statusAquecimento } from './warmup.js';
 import { podeEnviarAgora, registrarEnvio, proximoIntervaloMs } from './limiter.js';
 import { detectarPedidoOptOut, estaOptOut, registrarOptOut } from './optout.js';
 import { montarMensagem } from './templates.js';
+import { atualizarEstagio } from '../../crm/src/sync-twenty.js';
 
 const LEADS_CSV = 'coleta/leads.csv';
 const LOG_ENVIOS = 'whatsapp-bot/state/enviados.csv';
@@ -74,6 +75,9 @@ async function rodarCampanha(socket) {
     registrarEnvio();
     marcarComoEnviado(lead.telefone_e164);
     logarEnvio(lead, mensagem);
+    await atualizarEstagio(lead.telefone_e164, 'CONTATADO').catch((erro) =>
+      console.error('[crm] falhou ao mover estágio (kanban segue manual pra esse lead):', erro.message)
+    );
     console.log(`[campanha] enviado pra ${lead.nome} (${verificacao.restantesHoje - 1} restantes hoje).`);
 
     await esperar(proximoIntervaloMs());
@@ -106,15 +110,24 @@ async function iniciar() {
 
   // Opt-out tem prioridade sobre qualquer outra lógica — checa toda
   // mensagem recebida, independente de vir de lead da campanha ou não.
+  // Fecha o funil que faltava: qualquer resposta que NÃO seja opt-out
+  // move o card no CRM pra "respondeu" sozinho — é o kanban andando
+  // pelo evento real, não pelo diretor arrastando manualmente.
   socket.ev.on('messages.upsert', ({ messages }) => {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
       const texto = msg.message?.conversation ?? msg.message?.extendedTextMessage?.text ?? '';
+      const telefone = `+${msg.key.remoteJid.replace('@s.whatsapp.net', '')}`;
+
       if (detectarPedidoOptOut(texto)) {
-        const telefone = `+${msg.key.remoteJid.replace('@s.whatsapp.net', '')}`;
         registrarOptOut(telefone);
         console.log(`[optout] ${telefone} pediu pra parar — nunca mais recebe mensagem.`);
+        continue;
       }
+
+      atualizarEstagio(telefone, 'RESPONDEU')
+        .then((r) => r && console.log(`[crm] ${telefone} respondeu — card movido no kanban.`))
+        .catch((erro) => console.error('[crm] falhou ao mover estágio:', erro.message));
     }
   });
 }

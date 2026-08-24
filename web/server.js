@@ -1,12 +1,14 @@
 import { createServer } from 'node:http';
 import { readFile, existsSync } from 'node:fs';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { parse } from 'csv-parse/sync';
+import Busboy from 'busboy';
 import { buscarEmpresas } from '../coleta/src/maps.js';
 import { validarLeadsDeRegistros } from '../coleta/src/validar.js';
 import { consultarCNPJ } from '../coleta/src/cnpj.js';
 import { exportarPlanilha } from '../coleta/src/exportar-planilha.js';
+import { importarPlanilha } from '../coleta/src/importar-planilha.js';
 import { statusAquecimento, iniciarAquecimento } from '../whatsapp-bot/src/warmup.js';
 import { podeEnviarAgora } from '../whatsapp-bot/src/limiter.js';
 
@@ -63,6 +65,34 @@ const rotas = {
     enviarJSON(res, 200, { aquecimento: statusAquecimento(), envioHoje: podeEnviarAgora() });
   },
   'POST /api/aquecimento/iniciar': async (_req, res) => enviarJSON(res, 200, iniciarAquecimento()),
+  'POST /api/importar': async (req, res) => {
+    mkdirSync('coleta/in', { recursive: true });
+    const caminhoTemp = `coleta/in/upload-${Date.now()}.xlsx`;
+    const busboy = Busboy({ headers: req.headers, limits: { fileSize: 10 * 1024 * 1024 } });
+
+    busboy.on('file', (_campo, arquivo) => {
+      const pedacos = [];
+      arquivo.on('data', (d) => pedacos.push(d));
+      arquivo.on('end', () => writeFileSync(caminhoTemp, Buffer.concat(pedacos)));
+    });
+
+    busboy.on('finish', async () => {
+      try {
+        const resultado = await importarPlanilha(caminhoTemp, { sincronizarCRM: true });
+        enviarJSON(res, 200, resultado);
+      } catch (erro) {
+        enviarJSON(res, 400, { erro: erro.message });
+      } finally {
+        try {
+          unlinkSync(caminhoTemp);
+        } catch {
+          // arquivo temporário já pode não existir se importarPlanilha falhou antes de ler
+        }
+      }
+    });
+
+    req.pipe(busboy);
+  },
   'GET /api/exportar': async (_req, res) => {
     try {
       const caminho = await exportarPlanilha();
