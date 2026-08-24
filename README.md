@@ -46,6 +46,13 @@ lógica de `limiter.js`). Isso comprova a mecânica — não é uma promessa.
 `coleta/src/limiter-navegador.js`, mesmo núcleo (`lib/limitador-diario.js`)
 usado pelo rate-limit do WhatsApp. Pára sozinho no meio do lote se o
 teto bater.
+
+**Anti-detecção:** `maps-browser.js` usa `playwright-extra` +
+`puppeteer-extra-plugin-stealth` (não Python/Java — a técnica é a mesma
+engine Chromium em qualquer linguagem, trocar de stack não muda nada).
+Não é solução permanente — mascara marca óbvia de automação, mas a
+comunidade reporta eficácia caindo com o tempo. Complementa a trava
+diária, não substitui.
 | **Google Places** (opcional) | Billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento** | ✅ sim |
 | **WhatsApp** — parear o bot | QR só pode ser escaneado por você | rodar `npm run bot:start` | Grátis | — |
 

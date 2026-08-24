@@ -17,10 +17,19 @@
 // coleta/src/limiter-navegador.js. Pára sozinho no meio do lote se o
 // teto do dia bater.
 //
+// Stealth plugin (playwright-extra + puppeteer-extra-plugin-stealth):
+// mascara marca óbvia de automação (o que o Google detecta primeiro).
+// NÃO é solução permanente — comunidade reporta eficácia caindo com o
+// tempo, é gato-e-rato contra a detecção do Google. Complementa a
+// trava de rate-limit acima, não substitui.
+//
 // Requer: npx playwright install chromium (uma vez, depois de npm install)
 
-import { chromium } from 'playwright';
+import { chromium } from 'playwright-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { podeRasparAgora, registrarRaspagem, proximaPausaMs } from './limiter-navegador.js';
+
+chromium.use(StealthPlugin());
 
 const ESPERA_CURTA = 1500;
 
