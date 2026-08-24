@@ -6,6 +6,7 @@
   "scripts": {
     "coleta:validar": "node coleta/src/validar.js",
     "bot:start": "node whatsapp-bot/src/index.js",
+    "web:start": "node web/server.js",
     "test": "vitest run"
   },
   "dependencies": {

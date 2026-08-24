@@ -56,12 +56,41 @@ async function buscarGooglePlaces(nicho, cidade) {
   }));
 }
 
+// OpenStreetMap/Nominatim — 100% grátis, sem chave, sem cadastro, sem
+// cartão. Fonte padrão quando nenhuma chave paga tá configurada. Cobertura
+// de comércio local no Brasil é menor que Google/TomTom (depende de
+// contribuição voluntária), mas destrava o uso sem custo nenhum.
+async function buscarOSM(nicho, cidade) {
+  const url = new URL('https://nominatim.openstreetmap.org/search');
+  url.searchParams.set('q', `${nicho}, ${cidade}`);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('limit', '50');
+  url.searchParams.set('countrycodes', 'br');
+
+  const resposta = await fetch(url, {
+    headers: { 'User-Agent': 'genesis-prospeccao/0.1 (uso interno Missões Tech)' },
+  });
+  if (!resposta.ok) throw new Error(`OSM ${resposta.status}: ${await resposta.text()}`);
+  const dado = await resposta.json();
+
+  // Nominatim não devolve telefone — só localização/nome. Serve pra
+  // descoberta (existe? onde fica?), não substitui enriquecimento de
+  // contato (isso fica pro cnpj.js quando o CNPJ for conhecido).
+  return dado.map((r) => ({
+    nome: r.display_name.split(',')[0],
+    telefone: '',
+    categoria: r.type || nicho,
+    cidade,
+    site: '',
+    fonte: 'osm',
+  }));
+}
+
 export async function buscarEmpresas(nicho, cidade) {
   if (TOMTOM_KEY) return buscarTomTom(nicho, cidade);
   if (GOOGLE_KEY) return buscarGooglePlaces(nicho, cidade);
-  throw new Error(
-    'nenhuma chave configurada. Defina TOMTOM_API_KEY ou GOOGLE_MAPS_API_KEY no .env (ver README.md).'
-  );
+  return buscarOSM(nicho, cidade); // padrão sem custo — nunca trava por falta de chave
 }
 
 // CLI: node coleta/src/maps.js "clínica odontológica" "Serra, ES"

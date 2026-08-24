@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Genesis Prospecção</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Genesis Prospecção</h1>
+    <p>Missões Tech — varredura de nicho, validação de lead, disparo seguro no WhatsApp.</p>
+  </header>
+
+  <main>
+    <section class="painel">
+      <h2>1. Varredura</h2>
+      <form id="form-varredura">
+        <input name="nicho" placeholder="Nicho (ex: clínica odontológica)" required>
+        <input name="cidade" placeholder="Cidade/bairro (ex: Serra, ES)" required>
+        <button type="submit">Rodar varredura</button>
+      </form>
+      <p id="resultado-varredura" class="resultado"></p>
+    </section>
+
+    <section class="painel">
+      <h2>2. Leads</h2>
+      <button id="btn-atualizar-leads">Atualizar</button>
+      <table id="tabela-leads">
+        <thead><tr><th>Nome</th><th>Telefone</th><th>Categoria</th><th>Site</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="painel">
+      <h2>3. WhatsApp — status de segurança</h2>
+      <div id="status-whatsapp">carregando...</div>
+      <button id="btn-iniciar-aquecimento">Iniciar aquecimento (5-7 dias, uso humano)</button>
+      <p class="aviso">O disparo em massa roda só pela linha de comando (<code>npm run bot:start</code>) —
+      de propósito, pra nunca sair um envio automatizado de um clique acidental na página.</p>
+    </section>
+
+    <section class="painel">
+      <h2>Consultar CNPJ (opcional)</h2>
+      <form id="form-cnpj">
+        <input name="cnpj" placeholder="Só números" required>
+        <button type="submit">Consultar</button>
+      </form>
+      <p id="resultado-cnpj" class="resultado"></p>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

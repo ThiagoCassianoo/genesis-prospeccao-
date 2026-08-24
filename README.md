@@ -23,16 +23,16 @@ lógica de `limiter.js`). Isso comprova a mecânica — não é uma promessa.
 
 ## O que falta pra rodar com dado real (ação sua, fora do meu alcance)
 
-| Peça | Por quê preciso de você | Link |
-|---|---|---|
-| **TomTom Maps** — descoberta de empresa local | Conector já adicionado à sua conta, falta autorizar (OAuth) | claude.ai → Settings → Connectors |
-| **Chave TomTom** (se rodar `maps.js` fora de uma sessão Claude, ex. cron) | Signup grátis, sem cartão, 2500 req/dia | https://developer.tomtom.com/user/register |
-| **Google Places API** (alternativa/complemento ao TomTom) | Precisa projeto + billing no Google Cloud (tem US$200/mês grátis) | https://console.cloud.google.com/google/maps-apis/start |
-| **WhatsApp** — parear o bot | QR code só pode ser escaneado por você, no número novo | rodar `npm run bot:start`, escanear o QR que aparece no terminal |
+| Peça | Por quê preciso de você | Link | Custo |
+|---|---|---|---|
+| **Nada** — funciona sem chave | `maps.js` cai pra OpenStreetMap automaticamente | — | Grátis, sem cadastro |
+| **TomTom** (recomendado, mais cobertura) | Signup, sem cartão | https://developer.tomtom.com/user/register | Grátis, 2500 req/dia |
+| **Google Places** (opcional) | Exige billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento — pule se não quiser pagar agora** |
+| **WhatsApp** — parear o bot | QR code só pode ser escaneado por você, no número novo | rodar `npm run bot:start`, escanear o QR que aparece no terminal | Grátis |
 
 Nenhuma dessas travas é escolha minha — são credenciais/ações que só a
-conta do diretor pode conceder. Preencha `.env` (copie de
-`.env.example`) com `TOMTOM_API_KEY` ou `GOOGLE_MAPS_API_KEY`.
+conta do diretor pode conceder. Pra usar TomTom/Google, copie `.env.example`
+pra `.env` e preencha a chave; sem nenhuma, o sistema já funciona via OSM.
 
 **Por que o CNPJ (`cnpj.js`) não rodou aqui:** a API pública da
 BrasilAPI é bloqueada pelo proxy de rede deste ambiente sandbox (só
@@ -42,22 +42,30 @@ deste sandbox (sua máquina, servidor, GitHub Actions).
 
 ## Como rodar, do zero
 
+**Opção A — painel web (recomendado, roda mesmo sem nenhuma chave):**
 ```bash
 npm install
-cp .env.example .env   # preencha TOMTOM_API_KEY ou GOOGLE_MAPS_API_KEY
-
-# 1. descobrir empresas
-node coleta/src/maps.js "clínica odontológica" "Serra, ES" > coleta/in/nicho1.json
-
-# 2. validar/deduplicar (aceita CSV — exporte o JSON acima pro formato de coleta/schema.md)
-npm run coleta:validar -- coleta/in/nicho1.csv
-
-# 3. aquecer o número (5-7 dias de uso humano normal ANTES do passo 4)
-node whatsapp-bot/src/warmup.js iniciar
-
-# 4. campanha (só dispara se o aquecimento (passo 3) já concluiu)
-npm run bot:start   # escaneia QR no primeiro uso
+npm run web:start   # abre http://localhost:3000
 ```
+Rodei esse painel nesta sessão (`curl` contra o servidor real, não é
+mockup): varredura, tabela de leads, status de aquecimento e consulta de
+CNPJ funcionando ponta a ponta. Sem `TOMTOM_API_KEY`/`GOOGLE_MAPS_API_KEY`
+configurada, a varredura cai pro OpenStreetMap (grátis, sem cadastro).
+
+**Opção B — linha de comando (mesmo backend, sem UI):**
+```bash
+npm install
+cp .env.example .env   # opcional — sem chave usa OpenStreetMap
+
+node coleta/src/maps.js "clínica odontológica" "Serra, ES" > coleta/in/nicho1.json
+npm run coleta:validar -- coleta/in/nicho1.csv
+node whatsapp-bot/src/warmup.js iniciar   # 5-7 dias de uso humano ANTES do próximo passo
+npm run bot:start                          # só dispara depois do aquecimento concluir
+```
+
+O disparo de WhatsApp **não tem botão na página web de propósito** — só
+roda por `npm run bot:start`, pra nunca sair um envio em massa de um
+clique acidental.
 
 ## Ordem de execução (por que não pula etapa)
 Dado ruim (telefone errado, empresa fechada) é o que mais rápido queima a

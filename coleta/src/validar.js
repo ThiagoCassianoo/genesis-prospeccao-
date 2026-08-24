@@ -10,8 +10,10 @@ function carregarExistentes(caminho) {
   return parse(readFileSync(caminho, 'utf8'), { columns: true, skip_empty_lines: true });
 }
 
-export function validarLeads(caminhoEntrada, caminhoSaida = 'coleta/leads.csv') {
-  const entrada = parse(readFileSync(caminhoEntrada, 'utf8'), { columns: true, skip_empty_lines: true });
+// Núcleo puro (records in, records out) — usado tanto pelo CLI quanto
+// pelo painel web, pra não ter duas implementações da mesma regra de
+// dedupe/validação.
+export function validarLeadsDeRegistros(entrada, caminhoSaida = 'coleta/leads.csv') {
   const existentes = carregarExistentes(caminhoSaida);
   const telefonesVistos = new Set(existentes.map((l) => l.telefone_e164).filter(Boolean));
 
@@ -32,10 +34,7 @@ export function validarLeads(caminhoEntrada, caminhoSaida = 'coleta/leads.csv') 
 
   const todas = [...existentes, ...novas];
   mkdirSync('coleta', { recursive: true });
-  writeFileSync(
-    caminhoSaida,
-    stringify(todas, { header: true, columns: COLUNAS_SAIDA })
-  );
+  writeFileSync(caminhoSaida, stringify(todas, { header: true, columns: COLUNAS_SAIDA }));
 
   const resumo = {
     total: novas.length,
@@ -43,6 +42,12 @@ export function validarLeads(caminhoEntrada, caminhoSaida = 'coleta/leads.csv') 
     invalido: novas.filter((l) => l.status === 'invalido').length,
     duplicado: novas.filter((l) => l.status === 'duplicado').length,
   };
+  return resumo;
+}
+
+export function validarLeads(caminhoEntrada, caminhoSaida = 'coleta/leads.csv') {
+  const entrada = parse(readFileSync(caminhoEntrada, 'utf8'), { columns: true, skip_empty_lines: true });
+  const resumo = validarLeadsDeRegistros(entrada, caminhoSaida);
   console.log(`[coleta] ${caminhoEntrada} -> ${caminhoSaida}:`, resumo);
   return resumo;
 }
