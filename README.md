@@ -1,9 +1,11 @@
 # Genesis Prospecção
 
-Motor de prospecção B2B: acha empresa por nicho+região, valida o lead,
-manda mensagem no WhatsApp com segurança pro número. Fábrica de agentes
-Genesis IA adotada de `genesis-lovable` (ver `CLAUDE.md`). Contexto de
-produto completo: `docs/brief.md` e `docs/decisoes-locais.md`.
+Sistema de 3 módulos: **(1) descoberta** (`pesquisa/` + `coleta/`) →
+**(2) CRM com pipeline** (`crm/`, via Twenty) → **(3) automação de
+WhatsApp** (`whatsapp-bot/`). Fábrica de agentes Genesis IA adotada de
+`genesis-lovable` (ver `CLAUDE.md`). Orquestração opcional via n8n:
+`docs/orquestracao-n8n.md`. Contexto de produto completo: `docs/brief.md`
+e `docs/decisoes-locais.md`.
 
 ## Pipeline (rodado e verificado nesta sessão)
 
@@ -115,6 +117,7 @@ coleta/src/cnpj.js               validação via minhareceita.org/BrasilAPI/CNPJ
 coleta/src/validar.js            normalização + resgate wa.me + dedupe + prioridade → leads.csv
 coleta/src/exportar-planilha.js  consolida leads.csv em .xlsx, cruza com CNPJ quando conhecido
 lib/limitador-diario.js          núcleo do rate-limit, reusado por WhatsApp e navegador
+crm/src/sync-twenty.js           módulo 2: sincroniza leads.csv → Twenty CRM (companies)
 coleta/schema.md         schema do CSV de entrada/saída
 whatsapp-bot/src/warmup.js    gate de aquecimento (5-7 dias)
 whatsapp-bot/src/limiter.js   rate-limit 5-10/dia, horário comercial, jitter

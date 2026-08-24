@@ -30,6 +30,17 @@ Capturama/Datagma: dado de CNPJ é grátis (mesma base pública que já uso);
 contato confiável é sempre produto pago de base proprietária — não existe
 atalho gratuito pra isso além do que o Maps já entrega.
 
+## 2026-08-24 — Módulo 2 (CRM) é Twenty, não construído do zero
+Diretor pediu explicitamente "algo integrado" como o Twenty CRM em vez
+de construir pipeline/kanban próprio. Decisão: adotar Twenty
+(self-hosted, open-source), `crm/src/sync-twenty.js` só faz a ponte
+leads.csv → companies. Avaliados e descartados: GMapsScraper
+(Anonym0usWork1221, Python, fragmentaria a stack, sem trava de
+rate-limit) e o projeto n8n+Serper+Perplexity+GPT-4o do Awaisali36
+(3 APIs pagas, 15 estrelas, contradiz orçamento zero do diretor).
+Evolution API (pergunta de sessão anterior) também descartado — mesma
+Baileys por baixo, só adiciona infra sem reduzir risco no estágio atual.
+
 ## 2026-08-24 — Fonte de dado: MCPs já conectados primeiro
 Vibe Prospecting (Explorium) e Firecrawl já autorizados na conta — usar
 como fonte primária, zero setup. TomTom Maps foi adicionado à conta mas
