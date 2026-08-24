@@ -8,10 +8,11 @@ produto completo: `docs/brief.md` e `docs/decisoes-locais.md`.
 ## Pipeline (rodado e verificado nesta sessão)
 
 ```
-pesquisa/src/analisar-nichos.js → mede (não estima) qual nicho tem mais volume + carência de site [✅ lógica testada]
-coleta/src/maps.js              → busca empresa local (Apify/TomTom/Places/OSM)                    [precisa chave — ver abaixo]
-coleta/src/cnpj.js               → confirma empresa ATIVA (BrasilAPI/CNPJ.ws)                        [código pronto, não testável no sandbox]
-coleta/src/validar.js            → normaliza telefone, dedupe, prioridade → coleta/leads.csv         [✅ testado com dado de exemplo]
+pesquisa/src/analisar-nichos.js  → mede (não estima) qual nicho tem mais volume + carência de site [✅ lógica testada]
+coleta/src/maps.js               → busca empresa local (Apify/TomTom/Places/OSM)                    [precisa chave — ver abaixo]
+coleta/src/whatsapp-publico.js   → resgata wa.me publicado no site do lead antes de descartar        [✅ lógica testada, fetch real não testável no sandbox]
+coleta/src/cnpj.js               → confirma empresa ATIVA (BrasilAPI/CNPJ.ws) — NUNCA fonte de contato [código pronto, não testável no sandbox]
+coleta/src/validar.js            → normaliza telefone, resgate wa.me, dedupe, prioridade → leads.csv  [✅ testado com dado de exemplo]
 whatsapp-bot/                    → aquecimento → rate-limit 5-10/dia → envio                          [✅ lógica testada, envio real precisa QR]
 ```
 
@@ -36,6 +37,7 @@ lógica de `limiter.js`). Isso comprova a mecânica — não é uma promessa.
 | **Nada** (OSM) | Já é o padrão sem chave | — | Grátis, sem cadastro | ❌ não |
 | **TomTom** (mínimo recomendado) | Signup, sem cartão | https://developer.tomtom.com/user/register | Grátis, 2500 req/dia | ✅ sim |
 | **Apify Google Maps Extractor** (mais rico) | Signup + token | https://console.apify.com/ | ~US$5/mês grátis, depois pago | ✅ sim, + avaliação/categoria |
+| **Navegador (Playwright)** — grátis, mesma técnica do Apify | `npx playwright install chromium` + `USAR_NAVEGADOR=1` no `.env` | — | Grátis | ✅ sim, mas frágil — Google pode bloquear em uso pesado |
 | **Google Places** (opcional) | Billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento** | ✅ sim |
 | **WhatsApp** — parear o bot | QR só pode ser escaneado por você | rodar `npm run bot:start` | Grátis | — |
 
@@ -99,9 +101,10 @@ parar).
 
 ## Estrutura
 ```
-coleta/src/maps.js      descoberta local (Apify/TomTom/Places/OSM)
-coleta/src/cnpj.js       validação via BrasilAPI/CNPJ.ws (empresa ativa?)
-coleta/src/validar.js    normalização + dedupe + prioridade → leads.csv
+coleta/src/maps.js             descoberta local (Apify/TomTom/Places/OSM)
+coleta/src/whatsapp-publico.js resgata wa.me publicado no site do lead (dado público real)
+coleta/src/cnpj.js              validação via BrasilAPI/CNPJ.ws (empresa ativa? nunca contato)
+coleta/src/validar.js           normalização + resgate wa.me + dedupe + prioridade → leads.csv
 coleta/schema.md         schema do CSV de entrada/saída
 whatsapp-bot/src/warmup.js    gate de aquecimento (5-7 dias)
 whatsapp-bot/src/limiter.js   rate-limit 5-10/dia, horário comercial, jitter

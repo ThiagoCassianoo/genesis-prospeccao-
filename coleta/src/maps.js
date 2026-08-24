@@ -119,12 +119,18 @@ async function buscarOSM(nicho, cidade) {
   }));
 }
 
-// Prioridade: Apify (mais rico, pago) > TomTom (grátis, tem telefone) >
-// Google Places (grátis com billing) > OSM (grátis, sem telefone —
-// último recurso, não serve sozinho pra campanha de WhatsApp).
+// Prioridade: Apify (mais rico, pago) > TomTom (grátis, oficial, tem
+// telefone) > navegador (grátis, sem chave, mas frágil — DOM pode
+// quebrar, Google pode bloquear em uso pesado; exige opt-in explícito
+// por env var, não é padrão silencioso) > Google Places (grátis com
+// billing) > OSM (grátis, sem telefone — último recurso).
 export async function buscarEmpresas(nicho, cidade) {
   if (APIFY_TOKEN) return buscarApify(nicho, cidade);
   if (TOMTOM_KEY) return buscarTomTom(nicho, cidade);
+  if (process.env.USAR_NAVEGADOR === '1') {
+    const { buscarGoogleMapsBrowser } = await import('./maps-browser.js');
+    return buscarGoogleMapsBrowser(nicho, cidade);
+  }
   if (GOOGLE_KEY) return buscarGooglePlaces(nicho, cidade);
   return buscarOSM(nicho, cidade);
 }

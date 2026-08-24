@@ -44,7 +44,7 @@ const rotas = {
     if (!nicho || !cidade) return enviarJSON(res, 400, { erro: 'informe nicho e cidade' });
     try {
       const encontrados = await buscarEmpresas(nicho, cidade);
-      const resumo = validarLeadsDeRegistros(
+      const resumo = await validarLeadsDeRegistros(
         encontrados.map((e) => ({ ...e, categoria: e.categoria || nicho }))
       );
       enviarJSON(res, 200, { ...resumo, encontrados: encontrados.length });
