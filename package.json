@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "pesquisa:nichos": "node pesquisa/src/analisar-nichos.js",
     "coleta:validar": "node coleta/src/validar.js",
     "bot:start": "node whatsapp-bot/src/index.js",
     "web:start": "node web/server.js",

@@ -8,11 +8,19 @@ produto completo: `docs/brief.md` e `docs/decisoes-locais.md`.
 ## Pipeline (rodado e verificado nesta sessão)
 
 ```
-coleta/src/maps.js    → busca empresa local (TomTom/Places)      [precisa chave — ver abaixo]
-coleta/src/cnpj.js     → confirma empresa ATIVA (BrasilAPI, pública) [código pronto, não testável no sandbox]
-coleta/src/validar.js  → normaliza telefone, dedupe → coleta/leads.csv [✅ testado com dado de exemplo]
-whatsapp-bot/          → aquecimento → rate-limit 5-10/dia → envio    [✅ lógica testada, envio real precisa QR]
+pesquisa/src/analisar-nichos.js → mede (não estima) qual nicho tem mais volume + carência de site [✅ lógica testada]
+coleta/src/maps.js              → busca empresa local (Apify/TomTom/Places/OSM)                    [precisa chave — ver abaixo]
+coleta/src/cnpj.js               → confirma empresa ATIVA (BrasilAPI/CNPJ.ws)                        [código pronto, não testável no sandbox]
+coleta/src/validar.js            → normaliza telefone, dedupe, prioridade → coleta/leads.csv         [✅ testado com dado de exemplo]
+whatsapp-bot/                    → aquecimento → rate-limit 5-10/dia → envio                          [✅ lógica testada, envio real precisa QR]
 ```
+
+**Fase 1 (pesquisa de nicho) não é relatório genérico** — não existe
+estatística pública de "quantas empresas em Altos da Serra não têm
+site". `pesquisa/src/analisar-nichos.js` mede direto: roda a busca real
+pra cada nicho candidato e pontua por volume × % sem site. Contexto
+qualitativo real (fonte: prefeitura de Serra) em
+`pesquisa/contexto-regiao.md`.
 
 Rodei o pipeline ponta a ponta com `coleta/in/exemplo-serra-es.csv`
 (dado de exemplo, não é lead real): `npm run coleta:validar --
@@ -65,6 +73,9 @@ configurada, a varredura cai pro OpenStreetMap (grátis, sem cadastro).
 ```bash
 npm install
 cp .env.example .env   # opcional — sem chave usa OpenStreetMap
+
+# 0. pesquisa: qual nicho vale mais a pena? (gera pesquisa/relatorio-*.md)
+npm run pesquisa:nichos -- "Serra, ES" "clínica odontológica" "barbearia" "pet shop" "academia"
 
 node coleta/src/maps.js "clínica odontológica" "Serra, ES" > coleta/in/nicho1.json
 npm run coleta:validar -- coleta/in/nicho1.csv
