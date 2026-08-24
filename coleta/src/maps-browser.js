@@ -6,15 +6,21 @@
 //
 // AVISO HONESTO: viola os Termos de Uso do Google (mesma categoria de
 // risco do Apify/TomTom scraping, já aceita pelo diretor). Em volume
-// pequeno/ocasional (dezenas de busca por dia) tende a funcionar; em
-// uso pesado e contínuo o Google aplica CAPTCHA e bloqueia o IP — o
-// Apify paga justamente por infraestrutura de proxy pra contornar isso
-// em escala, o que este script não tem. Seletores de DOM podem quebrar
-// quando o Google muda o layout — se parar de funcionar, é isso.
+// pequeno/ocasional tende a funcionar; em uso pesado e contínuo o
+// Google aplica CAPTCHA e bloqueia o IP — o Apify paga justamente por
+// infraestrutura de proxy pra contornar isso em escala, o que este
+// script não tem. Seletores de DOM podem quebrar quando o Google muda
+// o layout — se parar de funcionar, é isso.
+//
+// Trava de verdade (decisão do diretor, não promessa de prompt): até
+// 60 números/dia, pausa de 3-15min entre cada clique — ver
+// coleta/src/limiter-navegador.js. Pára sozinho no meio do lote se o
+// teto do dia bater.
 //
 // Requer: npx playwright install chromium (uma vez, depois de npm install)
 
 import { chromium } from 'playwright';
+import { podeRasparAgora, registrarRaspagem, proximaPausaMs } from './limiter-navegador.js';
 
 const ESPERA_CURTA = 1500;
 
@@ -40,6 +46,16 @@ export async function buscarGoogleMapsBrowser(nicho, cidade, opcoes = {}) {
     const cards = await pagina.locator('div[role="feed"] > div a[href*="/maps/place/"]').all();
 
     for (const card of cards.slice(0, maxResultados)) {
+      // Trava de verdade, não promessa de prompt: até 60/dia (decisão
+      // do diretor), pausa significativa (3-15min) entre cada clique —
+      // pára a raspagem no meio se o teto do dia bater, não força o
+      // resto do lote.
+      const verificacao = podeRasparAgora();
+      if (!verificacao.pode) {
+        console.log(`[maps-browser] parando: ${verificacao.motivo}.`);
+        break;
+      }
+
       try {
         await card.click();
         await pagina.waitForTimeout(ESPERA_CURTA);
@@ -69,6 +85,8 @@ export async function buscarGoogleMapsBrowser(nicho, cidade, opcoes = {}) {
           site: site ?? '',
           fonte: 'maps-browser',
         });
+        registrarRaspagem();
+        await pagina.waitForTimeout(proximaPausaMs());
       } catch {
         // um card falhou (DOM mudou, elemento sumiu) — segue pro próximo
       }

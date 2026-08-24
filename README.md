@@ -38,6 +38,12 @@ lógica de `limiter.js`). Isso comprova a mecânica — não é uma promessa.
 | **TomTom** (mínimo recomendado) | Signup, sem cartão | https://developer.tomtom.com/user/register | Grátis, 2500 req/dia | ✅ sim |
 | **Apify Google Maps Extractor** (mais rico) | Signup + token | https://console.apify.com/ | ~US$5/mês grátis, depois pago | ✅ sim, + avaliação/categoria |
 | **Navegador (Playwright)** — grátis, mesma técnica do Apify | `npx playwright install chromium` + `USAR_NAVEGADOR=1` no `.env` | — | Grátis | ✅ sim, mas frágil — Google pode bloquear em uso pesado |
+
+**Trava do navegador (decisão do diretor, código não promessa):** até
+60 números/dia, pausa de 3-15min entre cada clique —
+`coleta/src/limiter-navegador.js`, mesmo núcleo (`lib/limitador-diario.js`)
+usado pelo rate-limit do WhatsApp. Pára sozinho no meio do lote se o
+teto bater.
 | **Google Places** (opcional) | Billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento** | ✅ sim |
 | **WhatsApp** — parear o bot | QR só pode ser escaneado por você | rodar `npm run bot:start` | Grátis | — |
 
@@ -101,10 +107,14 @@ parar).
 
 ## Estrutura
 ```
-coleta/src/maps.js             descoberta local (Apify/TomTom/Places/OSM)
-coleta/src/whatsapp-publico.js resgata wa.me publicado no site do lead (dado público real)
-coleta/src/cnpj.js              validação via BrasilAPI/CNPJ.ws (empresa ativa? nunca contato)
-coleta/src/validar.js           normalização + resgate wa.me + dedupe + prioridade → leads.csv
+coleta/src/maps.js              descoberta local (Apify/TomTom/Places/OSM)
+coleta/src/maps-browser.js      raspagem via navegador (Playwright), travada em 60/dia
+coleta/src/limiter-navegador.js trava do navegador (teto diário + pausa 3-15min)
+coleta/src/whatsapp-publico.js  resgata wa.me publicado no site do lead (dado público real)
+coleta/src/cnpj.js               validação via minhareceita.org/BrasilAPI/CNPJ.ws (ativa? nunca contato)
+coleta/src/validar.js            normalização + resgate wa.me + dedupe + prioridade → leads.csv
+coleta/src/exportar-planilha.js  consolida leads.csv em .xlsx, cruza com CNPJ quando conhecido
+lib/limitador-diario.js          núcleo do rate-limit, reusado por WhatsApp e navegador
 coleta/schema.md         schema do CSV de entrada/saída
 whatsapp-bot/src/warmup.js    gate de aquecimento (5-7 dias)
 whatsapp-bot/src/limiter.js   rate-limit 5-10/dia, horário comercial, jitter

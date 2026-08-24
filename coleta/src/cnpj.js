@@ -1,8 +1,8 @@
 // Enriquecimento por CNPJ. Não existe API oficial da Receita Federal em
-// JSON — RFB só publica dump CSV em lote. BrasilAPI e CNPJ.ws são
-// serviços terceiros que leem essa base; nenhum dos dois é "a fonte
-// oficial", os dois são espelho dela. Uso principal: confirmar que a
-// empresa tá ATIVA antes de gastar uma mensagem nela.
+// JSON — RFB só publica dump CSV em lote. minhareceita.org, BrasilAPI e
+// CNPJ.ws são serviços (o primeiro open-source) que leem essa base;
+// nenhum é "a fonte oficial", os três são espelho dela. Uso principal:
+// confirmar que a empresa tá ATIVA antes de gastar uma mensagem nela.
 //
 // NÃO usar `telefone` daqui como contato de campanha — o telefone
 // cadastrado no CNPJ é, na maioria dos casos, do escritório de
@@ -35,7 +35,7 @@ async function viaCnpjWs(cnpjLimpo) {
     razao_social: dado.razao_social,
     situacao: dado.estabelecimento?.situacao_cadastral,
     ativa: dado.estabelecimento?.situacao_cadastral === 'ATIVA',
-    telefone: dado.estabelecimento?.telefone1 || null,
+    telefone_cnpj_nao_confiavel: dado.estabelecimento?.telefone1 || null,
     cnae_principal: dado.estabelecimento?.atividade_principal?.descricao,
     municipio: dado.estabelecimento?.cidade?.nome,
     uf: dado.estabelecimento?.estado?.sigla,
@@ -43,11 +43,33 @@ async function viaCnpjWs(cnpjLimpo) {
   };
 }
 
+// minhareceita.org (projeto open-source cuducos/minha-receita) — banco
+// de CNPJ completo servido como API pública, sem chave, sem o limite
+// de 3/min do CNPJ.ws. Reuso de projeto pronto, indicado pela
+// comunidade (r/brdev) como a opção livre mais robusta hoje.
+async function viaMinhaReceita(cnpjLimpo) {
+  const resposta = await fetch(`https://minhareceita.org/${cnpjLimpo}`);
+  if (!resposta.ok) return null;
+  const dado = await resposta.json();
+  return {
+    razao_social: dado.razao_social,
+    situacao: dado.descricao_situacao_cadastral,
+    ativa: dado.descricao_situacao_cadastral === 'ATIVA',
+    telefone_cnpj_nao_confiavel: dado.ddd_telefone_1 || null,
+    cnae_principal: dado.cnae_fiscal_descricao,
+    municipio: dado.municipio,
+    uf: dado.uf,
+    fonte: 'minhareceita',
+  };
+}
+
 export async function consultarCNPJ(cnpj) {
   const limpo = String(cnpj).replace(/\D/g, '');
   if (limpo.length !== 14) return null;
 
-  for (const consultar of [viaBrasilAPI, viaCnpjWs]) {
+  // minhareceita primeiro (sem rate limit apertado), BrasilAPI e
+  // CNPJ.ws como fallback se ela estiver fora do ar.
+  for (const consultar of [viaMinhaReceita, viaBrasilAPI, viaCnpjWs]) {
     try {
       const resultado = await consultar(limpo);
       if (resultado) return resultado;

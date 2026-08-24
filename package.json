@@ -8,6 +8,7 @@
     "coleta:validar": "node coleta/src/validar.js",
     "bot:start": "node whatsapp-bot/src/index.js",
     "web:start": "node web/server.js",
+    "coleta:exportar": "node coleta/src/exportar-planilha.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -17,7 +18,8 @@
     "csv-parse": "^5.5.6",
     "csv-stringify": "^6.5.1",
     "pino": "^9.4.0",
-    "playwright": "^1.48.0"
+    "playwright": "^1.48.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "vitest": "^2.1.1"

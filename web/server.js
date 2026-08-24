@@ -6,6 +6,7 @@ import { parse } from 'csv-parse/sync';
 import { buscarEmpresas } from '../coleta/src/maps.js';
 import { validarLeadsDeRegistros } from '../coleta/src/validar.js';
 import { consultarCNPJ } from '../coleta/src/cnpj.js';
+import { exportarPlanilha } from '../coleta/src/exportar-planilha.js';
 import { statusAquecimento, iniciarAquecimento } from '../whatsapp-bot/src/warmup.js';
 import { podeEnviarAgora } from '../whatsapp-bot/src/limiter.js';
 
@@ -62,6 +63,21 @@ const rotas = {
     enviarJSON(res, 200, { aquecimento: statusAquecimento(), envioHoje: podeEnviarAgora() });
   },
   'POST /api/aquecimento/iniciar': async (_req, res) => enviarJSON(res, 200, iniciarAquecimento()),
+  'GET /api/exportar': async (_req, res) => {
+    try {
+      const caminho = await exportarPlanilha();
+      readFile(caminho, (erro, conteudo) => {
+        if (erro) return enviarJSON(res, 500, { erro: erro.message });
+        res.writeHead(200, {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="${caminho.split('/').pop()}"`,
+        });
+        res.end(conteudo);
+      });
+    } catch (erro) {
+      enviarJSON(res, 400, { erro: erro.message });
+    }
+  },
 };
 
 const servidor = createServer(async (req, res) => {

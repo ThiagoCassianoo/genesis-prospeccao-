@@ -4,7 +4,18 @@ import { stringify } from 'csv-stringify/sync';
 import { normalizarTelefoneBR } from './telefone.js';
 import { buscarWhatsAppNoSite } from './whatsapp-publico.js';
 
-const COLUNAS_SAIDA = ['nome', 'telefone_e164', 'categoria', 'cidade', 'site', 'fonte', 'prioridade', 'status'];
+const COLUNAS_SAIDA = [
+  'nome',
+  'telefone_e164',
+  'categoria',
+  'cidade',
+  'site',
+  'cnpj', // opcional, preenchido manualmente quando conhecido — usado por exportar-planilha.js pra cruzar com a Receita
+  'fonte',
+  'prioridade',
+  'status',
+  'coletado_em',
+];
 
 // Pontuação de prioridade — regra do ICP já definido em docs/brief.md:
 // empresa sem site é o sinal mais forte de que precisa da oferta da
@@ -27,7 +38,9 @@ export async function validarLeadsDeRegistros(entrada, caminhoSaida = 'coleta/le
   const telefonesVistos = new Set(existentes.map((l) => l.telefone_e164).filter(Boolean));
 
   const novas = [];
+  const coletado_em = new Date().toISOString();
   for (const linha of entrada) {
+    linha.coletado_em = linha.coletado_em || coletado_em;
     const prioridade = calcularPrioridade(linha);
     let telefone_e164 = normalizarTelefoneBR(linha.telefone);
     let fonte = linha.fonte;
