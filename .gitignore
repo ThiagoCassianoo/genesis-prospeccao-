@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+.DS_Store
+runtime/logs/
+entrega-teste-navigator/
+
+# Dado real / sessão do WhatsApp — nunca commitar (PII + credencial)
+whatsapp-bot/state/
+coleta/leads.csv
+coleta/out/
