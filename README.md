@@ -23,16 +23,25 @@ lógica de `limiter.js`). Isso comprova a mecânica — não é uma promessa.
 
 ## O que falta pra rodar com dado real (ação sua, fora do meu alcance)
 
-| Peça | Por quê preciso de você | Link | Custo |
-|---|---|---|---|
-| **Nada** — funciona sem chave | `maps.js` cai pra OpenStreetMap automaticamente | — | Grátis, sem cadastro |
-| **TomTom** (recomendado, mais cobertura) | Signup, sem cartão | https://developer.tomtom.com/user/register | Grátis, 2500 req/dia |
-| **Google Places** (opcional) | Exige billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento — pule se não quiser pagar agora** |
-| **WhatsApp** — parear o bot | QR code só pode ser escaneado por você, no número novo | rodar `npm run bot:start`, escanear o QR que aparece no terminal | Grátis |
+| Peça | Por quê preciso de você | Link | Custo | Traz telefone? |
+|---|---|---|---|---|
+| **Nada** (OSM) | Já é o padrão sem chave | — | Grátis, sem cadastro | ❌ não |
+| **TomTom** (mínimo recomendado) | Signup, sem cartão | https://developer.tomtom.com/user/register | Grátis, 2500 req/dia | ✅ sim |
+| **Apify Google Maps Extractor** (mais rico) | Signup + token | https://console.apify.com/ | ~US$5/mês grátis, depois pago | ✅ sim, + avaliação/categoria |
+| **Google Places** (opcional) | Billing ativo no Google Cloud | https://console.cloud.google.com/google/maps-apis/start | **Pede pré-pagamento** | ✅ sim |
+| **WhatsApp** — parear o bot | QR só pode ser escaneado por você | rodar `npm run bot:start` | Grátis | — |
 
-Nenhuma dessas travas é escolha minha — são credenciais/ações que só a
-conta do diretor pode conceder. Pra usar TomTom/Google, copie `.env.example`
-pra `.env` e preencha a chave; sem nenhuma, o sistema já funciona via OSM.
+**Se o objetivo é contato, OSM sozinho não resolve** — não retorna
+telefone, então todo lead vindo dele cai como `invalido` no
+`leads.csv` (não é bug, é o dado faltando). Use pelo menos TomTom.
+
+Apify raspa o Google Maps direto — viola os Termos de Uso do Google,
+mesma categoria de risco que o bot de WhatsApp não-oficial (decisão já
+registrada em `docs/decisoes-locais.md`).
+
+Preencha `.env` (copie de `.env.example`) com a chave que escolher —
+`APIFY_API_TOKEN` > `TOMTOM_API_KEY` > `GOOGLE_MAPS_API_KEY`, nessa
+prioridade; sem nenhuma, cai pra OSM.
 
 **Por que o CNPJ (`cnpj.js`) não rodou aqui:** a API pública da
 BrasilAPI é bloqueada pelo proxy de rede deste ambiente sandbox (só
@@ -79,9 +88,9 @@ parar).
 
 ## Estrutura
 ```
-coleta/src/maps.js      descoberta local (TomTom/Places)
-coleta/src/cnpj.js       validação via BrasilAPI (empresa ativa?)
-coleta/src/validar.js    normalização + dedupe → leads.csv
+coleta/src/maps.js      descoberta local (Apify/TomTom/Places/OSM)
+coleta/src/cnpj.js       validação via BrasilAPI/CNPJ.ws (empresa ativa?)
+coleta/src/validar.js    normalização + dedupe + prioridade → leads.csv
 coleta/schema.md         schema do CSV de entrada/saída
 whatsapp-bot/src/warmup.js    gate de aquecimento (5-7 dias)
 whatsapp-bot/src/limiter.js   rate-limit 5-10/dia, horário comercial, jitter

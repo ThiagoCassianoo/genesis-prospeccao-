@@ -25,7 +25,7 @@ async function carregarLeads() {
   corpo.innerHTML = leads
     .map(
       (l) =>
-        `<tr><td>${l.nome}</td><td>${l.telefone_e164}</td><td>${l.categoria || ''}</td><td>${l.site || '—'}</td><td>${l.status}</td></tr>`
+        `<tr><td>${l.nome}</td><td>${l.telefone_e164}</td><td>${l.categoria || ''}</td><td>${l.site || '—'}</td><td>${l.prioridade || ''}</td><td>${l.status}</td></tr>`
     )
     .join('');
 }

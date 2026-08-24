@@ -3,7 +3,15 @@ import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
 import { normalizarTelefoneBR } from './telefone.js';
 
-const COLUNAS_SAIDA = ['nome', 'telefone_e164', 'categoria', 'cidade', 'site', 'fonte', 'status'];
+const COLUNAS_SAIDA = ['nome', 'telefone_e164', 'categoria', 'cidade', 'site', 'fonte', 'prioridade', 'status'];
+
+// Pontuação de prioridade — regra do ICP já definido em docs/brief.md:
+// empresa sem site é o sinal mais forte de que precisa da oferta da
+// Missões Tech. Não é ML, é a mesma regra de negócio, só que aplicada
+// de forma consistente em vez de na cabeça.
+function calcularPrioridade(lead) {
+  return lead.site ? 'media' : 'alta';
+}
 
 function carregarExistentes(caminho) {
   if (!existsSync(caminho)) return [];
@@ -19,18 +27,21 @@ export function validarLeadsDeRegistros(entrada, caminhoSaida = 'coleta/leads.cs
 
   const novas = [];
   for (const linha of entrada) {
+    const prioridade = calcularPrioridade(linha);
     const telefone_e164 = normalizarTelefoneBR(linha.telefone);
     if (!telefone_e164) {
-      novas.push({ ...linha, telefone_e164: linha.telefone ?? '', status: 'invalido' });
+      novas.push({ ...linha, telefone_e164: linha.telefone ?? '', prioridade, status: 'invalido' });
       continue;
     }
     if (telefonesVistos.has(telefone_e164)) {
-      novas.push({ ...linha, telefone_e164, status: 'duplicado' });
+      novas.push({ ...linha, telefone_e164, prioridade, status: 'duplicado' });
       continue;
     }
     telefonesVistos.add(telefone_e164);
-    novas.push({ ...linha, telefone_e164, status: 'pendente' });
+    novas.push({ ...linha, telefone_e164, prioridade, status: 'pendente' });
   }
+
+  novas.sort((a, b) => (a.prioridade === b.prioridade ? 0 : a.prioridade === 'alta' ? -1 : 1));
 
   const todas = [...existentes, ...novas];
   mkdirSync('coleta', { recursive: true });

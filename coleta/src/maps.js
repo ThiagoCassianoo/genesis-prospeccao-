@@ -6,6 +6,38 @@
 
 const TOMTOM_KEY = process.env.TOMTOM_API_KEY;
 const GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+
+// Apify "Google Maps Extractor" (compass/google-maps-extractor) — a
+// fonte mais rica (telefone, site, categoria, avaliação), mas: (1) pago
+// além do crédito grátis (~US$5/mês no plano free), (2) raspa Google
+// Maps direto, o que viola os Termos de Uso do Google — mesma categoria
+// de risco que o bot de WhatsApp não-oficial (decisão já aceita pelo
+// diretor, ver docs/decisoes-locais.md). Signup: https://console.apify.com/
+async function buscarApify(nicho, cidade) {
+  const url = `https://api.apify.com/v2/acts/compass~google-maps-extractor/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
+  const resposta = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      searchStringsArray: [`${nicho} ${cidade}`],
+      maxCrawledPlacesPerSearch: 50,
+      language: 'pt-BR',
+      countryCode: 'br',
+    }),
+  });
+  if (!resposta.ok) throw new Error(`Apify ${resposta.status}: ${await resposta.text()}`);
+  const lugares = await resposta.json();
+
+  return lugares.map((p) => ({
+    nome: p.title ?? '',
+    telefone: p.phone ?? p.phoneUnformatted ?? '',
+    categoria: p.categoryName ?? nicho,
+    cidade: p.city ?? cidade,
+    site: p.website ?? '',
+    fonte: 'apify',
+  }));
+}
 
 // TomTom Search API — signup grátis, sem cartão, 2500 req/dia:
 // https://developer.tomtom.com/user/register
@@ -87,10 +119,14 @@ async function buscarOSM(nicho, cidade) {
   }));
 }
 
+// Prioridade: Apify (mais rico, pago) > TomTom (grátis, tem telefone) >
+// Google Places (grátis com billing) > OSM (grátis, sem telefone —
+// último recurso, não serve sozinho pra campanha de WhatsApp).
 export async function buscarEmpresas(nicho, cidade) {
+  if (APIFY_TOKEN) return buscarApify(nicho, cidade);
   if (TOMTOM_KEY) return buscarTomTom(nicho, cidade);
   if (GOOGLE_KEY) return buscarGooglePlaces(nicho, cidade);
-  return buscarOSM(nicho, cidade); // padrão sem custo — nunca trava por falta de chave
+  return buscarOSM(nicho, cidade);
 }
 
 // CLI: node coleta/src/maps.js "clínica odontológica" "Serra, ES"
